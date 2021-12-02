@@ -1,0 +1,15 @@
+deploy:
+  - outputDir: /
+    copy:
+      - input: static/icons/greatwizard.ico
+        output: favicon.ico
+  - outputDir: artisans
+    gistID: 9f6b9cefc9fd791b931fe550b4946b59
+    copy:
+      - input: static/icons/greatwizard.ico
+        output: favicon.ico
+  - outputDir: pkmngo
+    gistID: a1fe87c89c8b6bdacf2d8a2b074898bb
+    copy:
+      - input: static/icons/pokemon.ico
+        output: favicon.ico

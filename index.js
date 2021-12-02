@@ -21,31 +21,39 @@ const options = {
 };
 
 const data = YAML.parse(
-  fs.readFileSync(path.join(__dirname, "gist.yml"), "utf8")
+  fs.readFileSync(path.join(__dirname, "deploy.yml"), "utf8")
 );
 
-const decorateHTML = function (content, gist) {
+const decorateHTML = function (content, options) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>${gist.description}</title>
+  ${options.title ? `<title>${options.title}</title>` : ""}
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css">
+  ${
+    options.favicon
+      ? '<link rel="icon" type="image/x-icon" href="favicon.ico">'
+      : ""
+  }
 </head>
 <body><main class="wrapper"><section class="container">${content}</section></main></body>
 </html>`;
 };
 
-const writeFile = async function (_filename, file, gist) {
-  let filename = _filename
+const writeFile = async function (_filename, file, options) {
+  let filename = _filename;
   let content = undefined;
   switch (filename.split(".")[1]) {
     case "md":
       filename = filename.replace(".md", ".html");
       content = await minify(
-        decorateHTML(DOMPurify.sanitize(marked.parse(file["content"])), gist),
+        decorateHTML(
+          DOMPurify.sanitize(marked.parse(file["content"])),
+          options
+        ),
         {
           collapseWhitespace: true,
           removeComments: true,
@@ -57,53 +65,57 @@ const writeFile = async function (_filename, file, gist) {
     default:
       content = file["content"];
   }
-  fs.writeFile(filename, content, function (err) {
-    if (err) throw err;
-    console.log(
-      `Gist ${_filename} is written to ${filename} successfully.`
-    );
-  });
+  fs.writeFileSync(filename, content);
+  console.log(`Gist ${_filename} is written to ${filename} successfully.`);
 };
 
-for (let gist of data.gists) {
-  https
-    .get(`https://api.github.com/gists/${gist.id}`, options, (resp) => {
-      if (resp.statusCode !== 200) {
-        console.log(`Got an error: ${resp.statusCode}`);
-        process.exit(1);
-      }
+for (let deploy of data.deploy) {
+  let outputDir = path.join(DIST_DIR, deploy.outputDir);
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
 
-      let data = "";
-      resp.on("data", (chunk) => {
-        data += chunk;
-      });
+  for (let copy of deploy.copy) {
+    let filename = path.join(outputDir, copy.output);
+    fs.copyFileSync(copy.input, filename);
+    console.log(`File ${copy.input} is written to ${filename} successfully.`);
+  }
 
-      resp.on("end", async () => {
-        console.log("Gotten gist successfully from GitHub.");
-        let outputDir = path.join(DIST_DIR, gist.outputDir);
-        fs.mkdirSync(outputDir, { recursive: true });
-        for (let file of gist.files) {
-          let filename = path.join(outputDir, file.output);
-          fs.copyFile(file.input, filename, function (err) {
-            if (err) throw err;
-            console.log(
-              `File ${file.input} is written to ${filename} successfully.`
-            );
-          });
-        }
-        let parsed = JSON.parse(data);
-        if (!parsed.files) {
-          console.log("Error: not a successful response.");
+  if (deploy.gistID) {
+    https
+      .get(`https://api.github.com/gists/${deploy.gistID}`, options, (resp) => {
+        if (resp.statusCode !== 200) {
+          console.log(`Got an error: ${resp.statusCode}`);
           process.exit(1);
-          return;
         }
-        let files = Object.values(parsed.files);
-        for (let file of files) {
-          await writeFile(path.join(outputDir, file.filename), file, parsed);
-        }
+
+        let data = "";
+        resp.on("data", (chunk) => {
+          data += chunk;
+        });
+
+        resp.on("end", async () => {
+          console.log(`Gotten gist ${deploy.gistID} successfully from GitHub.`);
+          let parsed = JSON.parse(data);
+          let options = {
+            title: parsed.description,
+            favicon:
+              parsed.files["favicon.ico"] !== undefined ||
+              deploy.copy.find((f) => f.output === "favicon.ico"),
+          };
+          if (!parsed.files) {
+            console.log("Error: not a successful response.");
+            process.exit(1);
+            return;
+          }
+          let files = Object.values(parsed.files);
+          for (let file of files) {
+            await writeFile(path.join(outputDir, file.filename), file, options);
+          }
+        });
+      })
+      .on("error", (err) => {
+        console.log(`Error getting gist: ${err.message}`);
       });
-    })
-    .on("error", (err) => {
-      console.log(`Error getting gist: ${err.message}`);
-    });
+  }
 }
