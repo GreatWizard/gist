@@ -1,0 +1,29 @@
+{
+  "name": "gist",
+  "version": "0.0.0",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GreatWizard/gist.git"
+  },
+  "author": {
+    "name": "Guillaume Gérard",
+    "url": "https://guillaume.sh"
+  },
+  "bugs": {
+    "url": "https://github.com/GreatWizard/greatwizard.github.io/issues"
+  },
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "start": "node index.js",
+    "prebuild": "rm -rf dist",
+    "build": "node index.js"
+  },
+  "dependencies": {
+    "dompurify": "^2.3.3",
+    "html-minifier-terser": "^6.1.0",
+    "jsdom": "^18.1.1",
+    "marked": "^4.0.6",
+    "yaml": "^1.10.2"
+  }
+}
