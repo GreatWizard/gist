@@ -5,7 +5,7 @@ const YAML = require("yaml");
 const marked = require("marked");
 const createDOMPurify = require("dompurify");
 const { JSDOM } = require("jsdom");
-const { minify } = require('html-minifier-terser');
+const { minify } = require("html-minifier-terser");
 
 const window = new JSDOM("").window;
 const DOMPurify = createDOMPurify(window);
@@ -30,32 +30,38 @@ const decorateHTML = function (content, gist) {
 <head>
   <meta charset="UTF-8">
   <title>${gist.description}</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css">
 </head>
-<body>${content}</body>
+<body><main class="wrapper"><section class="container">${content}</section></main></body>
 </html>`;
 };
 
-const writeFile = async function (filename, file, gist) {
+const writeFile = async function (_filename, file, gist) {
+  let filename = _filename
   let content = undefined;
   switch (filename.split(".")[1]) {
     case "md":
       filename = filename.replace(".md", ".html");
-      content = await minify(decorateHTML(
-        DOMPurify.sanitize(marked.parse(file["content"])),
-        gist
-      ), {
-        collapseWhitespace: true,
-        removeComments: true,
-        removeRedundantAttributes: true,
-        useShortDoctype: true,
-      });
+      content = await minify(
+        decorateHTML(DOMPurify.sanitize(marked.parse(file["content"])), gist),
+        {
+          collapseWhitespace: true,
+          removeComments: true,
+          removeRedundantAttributes: true,
+          useShortDoctype: true,
+        }
+      );
       break;
     default:
       content = file["content"];
   }
   fs.writeFile(filename, content, function (err) {
     if (err) throw err;
-    console.log(`Gist ${gist.description} is written to ${filename} successfully.`);
+    console.log(
+      `Gist ${_filename} is written to ${filename} successfully.`
+    );
   });
 };
 
@@ -74,6 +80,17 @@ for (let gist of data.gists) {
 
       resp.on("end", async () => {
         console.log("Gotten gist successfully from GitHub.");
+        let outputDir = path.join(DIST_DIR, gist.outputDir);
+        fs.mkdirSync(outputDir, { recursive: true });
+        for (let file of gist.files) {
+          let filename = path.join(outputDir, file.output);
+          fs.copyFile(file.input, filename, function (err) {
+            if (err) throw err;
+            console.log(
+              `File ${file.input} is written to ${filename} successfully.`
+            );
+          });
+        }
         let parsed = JSON.parse(data);
         if (!parsed.files) {
           console.log("Error: not a successful response.");
@@ -81,11 +98,8 @@ for (let gist of data.gists) {
           return;
         }
         let files = Object.values(parsed.files);
-        let outputDir = path.join(DIST_DIR, gist.outputDir);
-        fs.mkdirSync(outputDir, { recursive: true });
         for (let file of files) {
-          let filename = path.join(outputDir, file["filename"]);
-          await writeFile(filename, file, parsed);
+          await writeFile(path.join(outputDir, file.filename), file, parsed);
         }
       });
     })
