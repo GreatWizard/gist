@@ -31,11 +31,7 @@ for (let copy of data.index.copy) {
   if (format === "scss" || format === "css") {
     styleSheets.push(outputFilename.replace(".scss", ".css"));
   }
-  writeFile(
-    path.join(DIST_DIR, outputFilename),
-    fs.readFileSync(copy.input, "utf8"),
-    format
-  );
+  writeFile(path.join(DIST_DIR, outputFilename), format, { file: copy.input });
 }
 
 for (let linkConfig of data.links || []) {
@@ -48,8 +44,8 @@ for (let linkConfig of data.links || []) {
     for (let copy of linkConfig.copy || []) {
       writeFile(
         path.join(outputDir, copy.output || path.basename(copy.input)),
-        fs.readFileSync(copy.input, "utf8"),
-        determineFormat(copy.input)
+        determineFormat(copy.input),
+        { file: copy.input }
       );
     }
 
@@ -90,9 +86,11 @@ for (let linkConfig of data.links || []) {
                   for (let file of files) {
                     await writeFile(
                       path.join(outputDir, file.filename),
-                      file["content"],
                       determineFormat(file.filename),
-                      options
+                      {
+                        data: file["content"],
+                        ...options,
+                      }
                     );
                   }
                   resolve({
