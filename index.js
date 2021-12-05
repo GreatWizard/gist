@@ -20,12 +20,23 @@ const promises = [];
 
 const styleSheets = [];
 
-const data = YAML.parse(fs.readFileSync("deploy.yml", "utf8"));
+const config = YAML.parse(fs.readFileSync("deploy.yml", "utf8"));
 
 if (!fs.existsSync(DIST_DIR)) {
   fs.mkdirSync(DIST_DIR, { recursive: true });
 }
-for (let copy of data.index.copy) {
+
+let theme = config.theme;
+
+if (!theme || !fs.existsSync(`./lib/themes/${theme}.scss`)) {
+  theme = "default";
+}
+
+writeFile(path.join(DIST_DIR, "style.css"), "scss", {
+  file: `./lib/themes/${theme}.scss`,
+});
+
+for (let copy of config.index.copy) {
   let format = determineFormat(copy.input);
   let outputFilename = copy.output || path.basename(copy.input);
   if (format === "scss" || format === "css") {
@@ -34,7 +45,7 @@ for (let copy of data.index.copy) {
   writeFile(path.join(DIST_DIR, outputFilename), format, { file: copy.input });
 }
 
-for (let linkConfig of data.links || []) {
+for (let linkConfig of config.links || []) {
   if (linkConfig.outputDir) {
     let outputDir = path.join(DIST_DIR, linkConfig.outputDir);
     if (!fs.existsSync(outputDir)) {
@@ -72,7 +83,7 @@ for (let linkConfig of data.links || []) {
                   );
                   let parsed = JSON.parse(data);
                   let options = {
-                    mainTitle: data.title,
+                    mainTitle: config.title,
                     title: parsed.description,
                     favicon:
                       parsed.files["favicon.ico"] !== undefined ||
@@ -120,9 +131,9 @@ for (let linkConfig of data.links || []) {
 const index = await Promise.all(promises);
 
 const indexContent = await generateIndex(index, {
-  mainTitle: data.title,
-  gravatar: data.gravatar,
-  favicon: data.index.copy?.find(
+  mainTitle: config.title,
+  gravatar: config.gravatar,
+  favicon: config.index.copy?.find(
     (f) =>
       path.basename(f.input) === "favicon.ico" || f.output === "favicon.ico"
   ),

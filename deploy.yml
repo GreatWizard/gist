@@ -1,9 +1,9 @@
 title: GreatWizard
 gravatar: cf3d925d4f7811a05f32458249b01c45
+theme: dracula
 index:
   copy:
     - input: static/icons/favicon.ico
-    - input: static/index.scss
     - input: static/CNAME
 links:
   - outputDir: artisans
