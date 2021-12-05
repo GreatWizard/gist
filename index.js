@@ -3,13 +3,10 @@ import path from "path";
 import https from "https";
 import YAML from "yaml";
 import { parse } from "marked";
-import createDOMPurify from "dompurify";
-import { JSDOM } from "jsdom";
-import { minify } from "html-minifier-terser";
 import sass from "sass";
 
-const window = new JSDOM("").window;
-const DOMPurify = createDOMPurify(window);
+import DOMPurify from "./lib/dompurify.js";
+import minify from "./lib/minify.js";
 
 const DIST_DIR = "dist";
 
@@ -104,13 +101,7 @@ const writeFile = async function (_filename, _content, _format, _options = {}) {
         decorateHTML(
           `<section class="container">${parse(_content)}</section>`,
           _options
-        ),
-        {
-          collapseWhitespace: true,
-          removeComments: true,
-          removeRedundantAttributes: true,
-          useShortDoctype: true,
-        }
+        )
       );
       break;
     case "scss":
