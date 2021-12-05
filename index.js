@@ -26,6 +26,8 @@ const options = {
 
 const promises = [];
 
+const styleSheets = [];
+
 const data = YAML.parse(fs.readFileSync("deploy.yml", "utf8"));
 
 const decorateHTML = function (content, options) {
@@ -74,7 +76,7 @@ const generateIndex = async function (index) {
       {
         title: `Home`,
         favicon: data.index.copy?.find((f) => f.output === "favicon.ico"),
-        styleSheets: data.index.styleSheets,
+        styleSheets: styleSheets,
       }
     )
   );
@@ -131,8 +133,13 @@ if (!fs.existsSync(DIST_DIR)) {
   fs.mkdirSync(DIST_DIR, { recursive: true });
 }
 for (let copy of data.index.copy) {
+  let format = determineFormat(copy.input);
+  let outputFilename = copy.output || path.basename(copy.input);
+  if (format === "scss" || format === "css") {
+    styleSheets.push(outputFilename.replace(".scss", ".css"));
+  }
   writeFile(
-    path.join(DIST_DIR, copy.output || path.basename(copy.input)),
+    path.join(DIST_DIR, outputFilename),
     fs.readFileSync(copy.input, "utf8"),
     determineFormat(copy.input)
   );
@@ -179,7 +186,11 @@ for (let linkConfig of data.links || []) {
                     title: parsed.description,
                     favicon:
                       parsed.files["favicon.ico"] !== undefined ||
-                      linkConfig.copy?.find((f) => f.output === "favicon.ico"),
+                      linkConfig.copy?.find(
+                        (f) =>
+                          path.basename(f.input) === "favicon.ico" ||
+                          f.output === "favicon.ico"
+                      ),
                   };
                   let files = Object.values(parsed.files);
                   for (let file of files) {
