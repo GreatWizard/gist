@@ -4,7 +4,7 @@ index:
   copy:
     - input: static/icons/greatwizard.ico
       output: favicon.ico
-    - input: static/index.css
+    - input: static/index.scss
       output: index.css
     - input: static/CNAME
       output: CNAME

@@ -6,6 +6,7 @@ import { parse } from "marked";
 import createDOMPurify from "dompurify";
 import { JSDOM } from "jsdom";
 import { minify } from "html-minifier-terser";
+import sass from "sass";
 
 const window = new JSDOM("").window;
 const DOMPurify = createDOMPurify(window);
@@ -79,16 +80,28 @@ const generateIndex = async function (index) {
   );
 };
 
-const writeFile = async function (_filename, file, options) {
+const determineFormat = function (_filename) {
+  const ext = _filename.split(".").pop();
+  switch (ext) {
+    case "md":
+      return "markdown";
+    case "scss":
+      return "scss";
+    default:
+      return ext;
+  }
+};
+
+const writeFile = async function (_filename, _content, _format, _options = {}) {
   let filename = _filename;
   let content = undefined;
-  switch (filename.split(".")[1]) {
-    case "md":
+  switch (_format) {
+    case "markdown":
       filename = filename.replace(".md", ".html");
       content = await minify(
         `<section class="container">${decorateHTML(
-          parse(file["content"]),
-          options
+          parse(_content),
+          _options
         )}</section>`,
         {
           collapseWhitespace: true,
@@ -98,20 +111,31 @@ const writeFile = async function (_filename, file, options) {
         }
       );
       break;
+    case "scss":
+      filename = filename.replace(".scss", ".css");
+      content = sass
+        .renderSync({
+          data: _content,
+          outputStyle: "compressed",
+        })
+        .css.toString();
+      break;
     default:
-      content = file["content"];
+      content = _content;
   }
   fs.writeFileSync(filename, content);
-  console.log(`Gist ${_filename} is written to ${filename} successfully.`);
+  console.log(`File ${filename} written successfully.`);
 };
 
 if (!fs.existsSync(DIST_DIR)) {
   fs.mkdirSync(DIST_DIR, { recursive: true });
 }
 for (let copy of data.index.copy) {
-  let filename = path.join(DIST_DIR, copy.output);
-  fs.copyFileSync(copy.input, filename);
-  console.log(`File ${copy.input} is written to ${filename} successfully.`);
+  writeFile(
+    path.join(DIST_DIR, copy.output),
+    fs.readFileSync(copy.input, "utf8"),
+    determineFormat(copy.input)
+  );
 }
 
 for (let linkConfig of data.links) {
@@ -121,9 +145,11 @@ for (let linkConfig of data.links) {
   }
 
   for (let copy of linkConfig.copy || []) {
-    let filename = path.join(outputDir, copy.output);
-    fs.copyFileSync(copy.input, filename);
-    console.log(`File ${copy.input} is written to ${filename} successfully.`);
+    writeFile(
+      path.join(outputDir, copy.output),
+      fs.readFileSync(copy.input, "utf8"),
+      determineFormat(copy.input)
+    );
   }
 
   if (linkConfig.gistID) {
@@ -158,7 +184,8 @@ for (let linkConfig of data.links) {
                 for (let file of files) {
                   await writeFile(
                     path.join(outputDir, file.filename),
-                    file,
+                    file["content"],
+                    determineFormat(file.filename),
                     options
                   );
                 }
