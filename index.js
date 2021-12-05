@@ -18,7 +18,7 @@ if (!fs.existsSync(DIST_DIR)) {
   await fsPromises.mkdir(DIST_DIR, { recursive: true });
 }
 
-let theme = config.theme;
+let theme = config?.theme;
 
 if (!theme || !fs.existsSync(`./lib/themes/${theme}.scss`)) {
   theme = "default";
@@ -32,7 +32,7 @@ const styleFilename = path.basename(
 );
 
 let avatarFilename = undefined;
-if (config.avatar) {
+if (config?.avatar) {
   const avatarFormat = determineFormat(config.avatar);
   avatarFilename = path.basename(
     await writeFile(
@@ -46,18 +46,21 @@ if (config.avatar) {
   );
 }
 
-for (let copy of config.index.copy) {
-  let format = determineFormat(copy.input);
-  let outputFilename = copy.output || path.basename(copy.input);
-  if (format === "scss" || format === "css") {
-    styleSheets.push(outputFilename.replace(".scss", ".css"));
+if (config?.index?.copy) {
+  for (let copy of config.index.copy || []) {
+    let format = determineFormat(copy.input);
+    let outputFilename = copy.output || path.basename(copy.input);
+    let newFile = await writeFile(path.join(DIST_DIR, outputFilename), format, {
+      file: copy.input,
+      fingerprint: true,
+    });
+    if (format === "scss" || format === "css") {
+      styleSheets.push(path.basename(newFile));
+    }
   }
-  await writeFile(path.join(DIST_DIR, outputFilename), format, {
-    file: copy.input,
-  });
 }
 
-for (let linkConfig of config.links || []) {
+for (let linkConfig of config?.links || []) {
   if (linkConfig.outputDir) {
     let outputDir = path.join(DIST_DIR, linkConfig.outputDir);
     if (!fs.existsSync(outputDir)) {
@@ -75,7 +78,7 @@ for (let linkConfig of config.links || []) {
     if (linkConfig.gistID) {
       let parsed = await getGist(linkConfig.gistID);
       let options = {
-        mainTitle: config.title,
+        mainTitle: config?.title,
         title: parsed.description,
         favicon:
           parsed.files["favicon.ico"] !== undefined ||
@@ -110,10 +113,10 @@ for (let linkConfig of config.links || []) {
 }
 
 const indexContent = await generateIndex(index, {
-  mainTitle: config.title,
+  mainTitle: config?.title,
   avatar: avatarFilename,
-  gravatar: config.gravatar,
-  favicon: config.index.copy?.find(
+  gravatar: config?.gravatar,
+  favicon: config?.index?.copy?.find(
     (f) =>
       path.basename(f.input) === "favicon.ico" || f.output === "favicon.ico"
   ),
