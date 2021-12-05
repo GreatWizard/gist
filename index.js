@@ -6,6 +6,7 @@ import YAML from "yaml";
 import { getGist } from "./lib/gist.js";
 import { determineFormat, writeFile } from "./lib/files.js";
 import { generateIndex } from "./lib/html.js";
+import { configSchema } from "./lib/schema.js";
 
 const DIST_DIR = "dist";
 
@@ -13,6 +14,14 @@ const index = [];
 const styleSheets = [];
 
 const config = YAML.parse(await fsPromises.readFile("deploy.yml", "utf8"));
+let { error } = configSchema.validate(config, { abortEarly: false });
+if (error) {
+  throw new Error(
+    `Configuration file is invalid:${error.details.map(
+      (detail) => `\n  - ${detail.message}`
+    )}`
+  );
+}
 
 if (!fs.existsSync(DIST_DIR)) {
   await fsPromises.mkdir(DIST_DIR, { recursive: true });
@@ -47,14 +56,15 @@ if (config?.avatar) {
 }
 
 if (config?.index?.copy) {
-  for (let copy of config.index.copy || []) {
+  for (let copy of config.index.copy || []) {
     let format = determineFormat(copy.input);
     let outputFilename = copy.output || path.basename(copy.input);
+    let isStyleSheet = format === "scss" || format === "css";
     let newFile = await writeFile(path.join(DIST_DIR, outputFilename), format, {
       file: copy.input,
-      fingerprint: true,
+      fingerprint: isStyleSheet,
     });
-    if (format === "scss" || format === "css") {
+    if (isStyleSheet) {
       styleSheets.push(path.basename(newFile));
     }
   }
