@@ -6,6 +6,8 @@ index:
       output: favicon.ico
     - input: static/index.css
       output: index.css
+    - input: static/CNAME
+      output: CNAME
   styleSheets:
     - index.css
 links:
