@@ -132,7 +132,7 @@ if (!fs.existsSync(DIST_DIR)) {
 }
 for (let copy of data.index.copy) {
   writeFile(
-    path.join(DIST_DIR, copy.output),
+    path.join(DIST_DIR, copy.output || path.basename(copy.input)),
     fs.readFileSync(copy.input, "utf8"),
     determineFormat(copy.input)
   );
@@ -147,7 +147,7 @@ for (let linkConfig of data.links || []) {
 
     for (let copy of linkConfig.copy || []) {
       writeFile(
-        path.join(outputDir, copy.output),
+        path.join(outputDir, copy.output || path.basename(copy.input)),
         fs.readFileSync(copy.input, "utf8"),
         determineFormat(copy.input)
       );

@@ -5,9 +5,7 @@ index:
     - input: static/icons/greatwizard.ico
       output: favicon.ico
     - input: static/index.scss
-      output: index.css
     - input: static/CNAME
-      output: CNAME
   styleSheets:
     - index.css
 links:
