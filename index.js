@@ -99,10 +99,10 @@ const writeFile = async function (_filename, _content, _format, _options = {}) {
     case "markdown":
       filename = filename.replace(".md", ".html");
       content = await minify(
-        `<section class="container">${decorateHTML(
-          parse(_content),
+        decorateHTML(
+          `<section class="container">${parse(_content)}</section>`,
           _options
-        )}</section>`,
+        ),
         {
           collapseWhitespace: true,
           removeComments: true,
