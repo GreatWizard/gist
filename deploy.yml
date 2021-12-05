@@ -1,12 +1,16 @@
-deploy:
-  - outputDir: /
-    copy:
-      - input: static/icons/greatwizard.ico
-        output: favicon.ico
+title: GreatWizard
+gravatar: cf3d925d4f7811a05f32458249b01c45
+index:
+  copy:
+    - input: static/icons/greatwizard.ico
+      output: favicon.ico
+    - input: static/index.css
+      output: index.css
+  styleSheets:
+    - index.css
+links:
   - outputDir: artisans
     gistID: 9f6b9cefc9fd791b931fe550b4946b59
-    copy:
-      - input: static/icons/greatwizard.ico
   - outputDir: pkmngo
     gistID: a1fe87c89c8b6bdacf2d8a2b074898bb
     copy:
