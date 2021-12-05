@@ -25,6 +25,7 @@
     "html-minifier-terser": "^6.1.0",
     "jsdom": "^18.1.1",
     "marked": "^4.0.6",
+    "md5-file": "^5.0.0",
     "milligram": "^1.4.1",
     "normalize.css": "^8.0.1",
     "sass": "^1.44.0",

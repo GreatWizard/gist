@@ -32,9 +32,27 @@ if (!theme || !fs.existsSync(`./lib/themes/${theme}.scss`)) {
   theme = "default";
 }
 
-writeFile(path.join(DIST_DIR, "style.css"), "scss", {
-  file: `./lib/themes/${theme}.scss`,
-});
+const styleFilename = path.basename(
+  await writeFile(path.join(DIST_DIR, "style.css"), "scss", {
+    file: `./lib/themes/${theme}.scss`,
+    fingerprint: true,
+  })
+);
+
+let avatarFilename = undefined;
+if (config.avatar) {
+  const avatarFormat = determineFormat(config.avatar);
+  avatarFilename = path.basename(
+    await writeFile(
+      path.join(DIST_DIR, `avatar.${avatarFormat}`),
+      avatarFormat,
+      {
+        file: config.avatar,
+        fingerprint: true,
+      }
+    )
+  );
+}
 
 for (let copy of config.index.copy) {
   let format = determineFormat(copy.input);
@@ -42,7 +60,9 @@ for (let copy of config.index.copy) {
   if (format === "scss" || format === "css") {
     styleSheets.push(outputFilename.replace(".scss", ".css"));
   }
-  writeFile(path.join(DIST_DIR, outputFilename), format, { file: copy.input });
+  await writeFile(path.join(DIST_DIR, outputFilename), format, {
+    file: copy.input,
+  });
 }
 
 for (let linkConfig of config.links || []) {
@@ -53,7 +73,7 @@ for (let linkConfig of config.links || []) {
     }
 
     for (let copy of linkConfig.copy || []) {
-      writeFile(
+      await writeFile(
         path.join(outputDir, copy.output || path.basename(copy.input)),
         determineFormat(copy.input),
         { file: copy.input }
@@ -92,6 +112,7 @@ for (let linkConfig of config.links || []) {
                           path.basename(f.input) === "favicon.ico" ||
                           f.output === "favicon.ico"
                       ),
+                    mainStyleSheet: styleFilename,
                   };
                   let files = Object.values(parsed.files);
                   for (let file of files) {
@@ -132,11 +153,13 @@ const index = await Promise.all(promises);
 
 const indexContent = await generateIndex(index, {
   mainTitle: config.title,
+  avatar: avatarFilename,
   gravatar: config.gravatar,
   favicon: config.index.copy?.find(
     (f) =>
       path.basename(f.input) === "favicon.ico" || f.output === "favicon.ico"
   ),
+  mainStyleSheet: styleFilename,
   styleSheets,
 });
 
