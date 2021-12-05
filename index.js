@@ -1,4 +1,5 @@
 import fs from "fs";
+import fsPromises from "fs/promises";
 import path from "path";
 import https from "https";
 import YAML from "yaml";
@@ -20,10 +21,10 @@ const promises = [];
 
 const styleSheets = [];
 
-const config = YAML.parse(fs.readFileSync("deploy.yml", "utf8"));
+const config = YAML.parse(await fsPromises.readFile("deploy.yml", "utf8"));
 
 if (!fs.existsSync(DIST_DIR)) {
-  fs.mkdirSync(DIST_DIR, { recursive: true });
+  await fsPromises.mkdir(DIST_DIR, { recursive: true });
 }
 
 let theme = config.theme;
@@ -69,7 +70,7 @@ for (let linkConfig of config.links || []) {
   if (linkConfig.outputDir) {
     let outputDir = path.join(DIST_DIR, linkConfig.outputDir);
     if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
+      await fsPromises.mkdir(outputDir, { recursive: true });
     }
 
     for (let copy of linkConfig.copy || []) {
@@ -163,4 +164,4 @@ const indexContent = await generateIndex(index, {
   styleSheets,
 });
 
-fs.writeFileSync(path.join(DIST_DIR, "index.html"), indexContent);
+await fsPromises.writeFile(path.join(DIST_DIR, "index.html"), indexContent);
