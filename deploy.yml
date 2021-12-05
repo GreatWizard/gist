@@ -18,3 +18,5 @@ links:
     copy:
       - input: static/icons/pokemon.ico
         output: favicon.ico
+  - title: Decoder
+    url: https://decoder.greatwizard.fr

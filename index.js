@@ -67,7 +67,7 @@ const generateIndex = async function (index) {
         `<section class="container center">`,
         ...index.map(
           (i) =>
-            `<a class="button button--link" href="${i.url}"><p class="button__text">${i.title}</p></a>`
+            `<a class="button button--link" href="${i.url}" target="_blank" rel="noopener noreferrer"><p class="button__text">${i.title}</p></a>`
         ),
         `</section>`,
       ].join(""),
@@ -138,67 +138,77 @@ for (let copy of data.index.copy) {
   );
 }
 
-for (let linkConfig of data.links) {
-  let outputDir = path.join(DIST_DIR, linkConfig.outputDir);
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-  }
+for (let linkConfig of data.links || []) {
+  if (linkConfig.outputDir) {
+    let outputDir = path.join(DIST_DIR, linkConfig.outputDir);
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
 
-  for (let copy of linkConfig.copy || []) {
-    writeFile(
-      path.join(outputDir, copy.output),
-      fs.readFileSync(copy.input, "utf8"),
-      determineFormat(copy.input)
-    );
-  }
+    for (let copy of linkConfig.copy || []) {
+      writeFile(
+        path.join(outputDir, copy.output),
+        fs.readFileSync(copy.input, "utf8"),
+        determineFormat(copy.input)
+      );
+    }
 
-  if (linkConfig.gistID) {
-    promises.push(
-      new Promise((resolve, reject) =>
-        https
-          .get(
-            `https://api.github.com/gists/${linkConfig.gistID}`,
-            options,
-            (resp) => {
-              if (resp.statusCode !== 200) {
-                reject(`Got an error: ${resp.statusCode}`);
-              }
-
-              let data = "";
-              resp.on("data", (chunk) => {
-                data += chunk;
-              });
-
-              resp.on("end", async () => {
-                console.log(
-                  `Gotten gist ${linkConfig.gistID} successfully from GitHub.`
-                );
-                let parsed = JSON.parse(data);
-                let options = {
-                  title: parsed.description,
-                  favicon:
-                    parsed.files["favicon.ico"] !== undefined ||
-                    linkConfig.copy?.find((f) => f.output === "favicon.ico"),
-                };
-                let files = Object.values(parsed.files);
-                for (let file of files) {
-                  await writeFile(
-                    path.join(outputDir, file.filename),
-                    file["content"],
-                    determineFormat(file.filename),
-                    options
-                  );
+    if (linkConfig.gistID) {
+      promises.push(
+        new Promise((resolve, reject) =>
+          https
+            .get(
+              `https://api.github.com/gists/${linkConfig.gistID}`,
+              options,
+              (resp) => {
+                if (resp.statusCode !== 200) {
+                  reject(`Got an error: ${resp.statusCode}`);
                 }
-                resolve({
-                  title: parsed.description,
-                  url: linkConfig.outputDir,
+
+                let data = "";
+                resp.on("data", (chunk) => {
+                  data += chunk;
                 });
-              });
-            }
-          )
-          .on("error", (err) => {
-            reject(`Error getting gist: ${err.message}`);
-          })
+
+                resp.on("end", async () => {
+                  console.log(
+                    `Gotten gist ${linkConfig.gistID} successfully from GitHub.`
+                  );
+                  let parsed = JSON.parse(data);
+                  let options = {
+                    title: parsed.description,
+                    favicon:
+                      parsed.files["favicon.ico"] !== undefined ||
+                      linkConfig.copy?.find((f) => f.output === "favicon.ico"),
+                  };
+                  let files = Object.values(parsed.files);
+                  for (let file of files) {
+                    await writeFile(
+                      path.join(outputDir, file.filename),
+                      file["content"],
+                      determineFormat(file.filename),
+                      options
+                    );
+                  }
+                  resolve({
+                    title: parsed.description,
+                    url: linkConfig.outputDir,
+                  });
+                });
+              }
+            )
+            .on("error", (err) => {
+              reject(`Error getting gist: ${err.message}`);
+            })
+        )
+      );
+    }
+  }
+
+  if (linkConfig.url && linkConfig.title) {
+    promises.push(
+      new Promise((resolve) =>
+        resolve({ title: linkConfig.title, url: linkConfig.url })
       )
     );
   }
