@@ -23,9 +23,11 @@
   "dependencies": {
     "@fortawesome/free-brands-svg-icons": "^5.15.4",
     "@fortawesome/free-solid-svg-icons": "^5.15.4",
+    "chalk": "^5.0.0",
     "command-line-args": "^5.2.0",
     "command-line-usage": "^6.1.1",
     "dompurify": "^2.3.3",
+    "figlet": "^1.5.2",
     "html-minifier-terser": "^6.1.0",
     "joi": "^17.5.0",
     "jsdom": "^18.1.1",

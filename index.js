@@ -4,6 +4,8 @@ import path from "path";
 import YAML from "yaml";
 import commandLineArgs from "command-line-args";
 import commandLineUsage from "command-line-usage";
+import chalk from "chalk";
+import figlet from "figlet";
 
 import { getGist } from "./lib/gist.js";
 import { determineFormat, writeFile } from "./lib/files.js";
@@ -39,6 +41,12 @@ const options = commandLineArgs(optionList);
 if (options.help) {
   console.log(
     commandLineUsage([
+      {
+        content: chalk.hex("#ffb86c")(
+          figlet.textSync(process.env.npm_package_name)
+        ),
+        raw: true,
+      },
       {
         header: "Options",
         optionList,
