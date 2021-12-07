@@ -122,7 +122,7 @@ for (let linkConfig of config?.links || []) {
   }
 }
 
-const indexContent = await generateIndex(index, config.linksSocial,{
+const indexContent = await generateIndex(index, config.linksSocial, {
   mainTitle: config?.title,
   avatar: avatarFilename,
   gravatar: config?.gravatar,
@@ -132,6 +132,7 @@ const indexContent = await generateIndex(index, config.linksSocial,{
   ),
   mainStyleSheet: styleFilename,
   styleSheets,
+  linksSocialPosition: config?.linksSocialPosition,
 });
 
 await fsPromises.writeFile(path.join(DIST_DIR, "index.html"), indexContent);
