@@ -16,3 +16,6 @@ links:
         output: favicon.ico
   - title: Decoder
     url: https://decoder.greatwizard.fr
+linksSocial:
+  - type: github
+    url: https://github.com/greatwizard

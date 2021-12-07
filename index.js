@@ -122,7 +122,7 @@ for (let linkConfig of config?.links || []) {
   }
 }
 
-const indexContent = await generateIndex(index, {
+const indexContent = await generateIndex(index, config.linksSocial,{
   mainTitle: config?.title,
   avatar: avatarFilename,
   gravatar: config?.gravatar,
