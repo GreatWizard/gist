@@ -15,6 +15,8 @@ links:
         output: favicon.ico
   - title: Decoder
     url: https://decoder.greatwizard.fr
+  - title: Wordle of the Day
+    url: https://wotd.greatwizard.fr
 linksSocial:
   - type: github
     url: https://github.com/greatwizard
